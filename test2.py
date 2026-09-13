@@ -1,38 +1,38 @@
 import sqlite3
 import subprocess
-import pickle
+import json
 import os
+import ast
 
-# Hardcoded credentials
-DB_PASSWORD = "supersecretpassword123"
-SECRET_TOKEN = "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456"
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+SECRET_TOKEN = os.environ.get("SECRET_TOKEN")
 
-# SQL Injection vulnerability
 def get_user(username):
     conn = sqlite3.connect("users.db")
     cursor = conn.cursor()
-    query = "SELECT * FROM users WHERE username = '" + username + "'"
-    cursor.execute(query)
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     return cursor.fetchall()
 
-# Command Injection vulnerability
 def ping_host(host):
-    result = subprocess.run("ping " + host, shell=True, capture_output=True)
+    allowed_hosts = {"127.0.0.1", "localhost"}
+    if host not in allowed_hosts:
+        raise ValueError("Host not allowed")
+    result = subprocess.run(["ping", host], capture_output=True)
     return result.stdout
 
-# Insecure deserialization vulnerability
 def load_user_data(data):
-    return pickle.loads(data)
+    return json.loads(data)
 
-# Path traversal vulnerability
 def read_file(filename):
     base_dir = "/var/app/files/"
-    with open(base_dir + filename, "r") as f:
+    safe_path = os.path.realpath(os.path.join(base_dir, filename))
+    if not safe_path.startswith(os.path.realpath(base_dir)):
+        raise ValueError("Path traversal detected")
+    with open(safe_path, "r") as f:
         return f.read()
 
-# Insecure use of eval
 def calculate(expression):
-    return eval(expression)
+    return ast.literal_eval(expression)
 
 user = get_user("admin")
 ping_host("127.0.0.1")
