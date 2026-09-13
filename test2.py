@@ -1,17 +1,39 @@
-import requests
-import base64
+import sqlite3
+import subprocess
+import pickle
+import os
 
-# Obfuscated sensitive data (API Key)
-api_key_encoded = "MTIzNDU2Nzg5MGFiY2RlZmdo"  # Base64 encoded API key
-url = "https://example.com/api/data"
+# Hardcoded credentials
+DB_PASSWORD = "supersecretpassword123"
+SECRET_TOKEN = "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456"
 
-# Decode the API key
-api_key = base64.b64decode(api_key_encoded).decode('utf-8')
+# SQL Injection vulnerability
+def get_user(username):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    query = "SELECT * FROM users WHERE username = '" + username + "'"
+    cursor.execute(query)
+    return cursor.fetchall()
 
-# Make API request with the sensitive key
-response = requests.get(url, headers={"Authorization": f"Bearer {api_key}"})
+# Command Injection vulnerability
+def ping_host(host):
+    result = subprocess.run("ping " + host, shell=True, capture_output=True)
+    return result.stdout
 
-if response.status_code == 200:
-    print("Data fetched successfully!")
-else:
-    print("Failed to fetch data")
+# Insecure deserialization vulnerability
+def load_user_data(data):
+    return pickle.loads(data)
+
+# Path traversal vulnerability
+def read_file(filename):
+    base_dir = "/var/app/files/"
+    with open(base_dir + filename, "r") as f:
+        return f.read()
+
+# Insecure use of eval
+def calculate(expression):
+    return eval(expression)
+
+user = get_user("admin")
+ping_host("127.0.0.1")
+result = calculate("2 + 2")
